@@ -52,12 +52,32 @@ a:hover {
 
 .nav {
   display: flex;
+  align-items: center;
   gap: 1rem;
 }
 
 .nav a.active {
   font-weight: 700;
   color: #111;
+}
+
+.nav-user {
+  color: #444;
+  font-size: 0.9rem;
+}
+
+.nav-signout {
+  border: 1px solid #ddd;
+  background: #fff;
+  border-radius: 6px;
+  padding: 0.3rem 0.7rem;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.nav-signout:disabled {
+  opacity: 0.6;
+  cursor: default;
 }
 
 .page h2 {

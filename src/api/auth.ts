@@ -30,8 +30,10 @@ export class AuthApiError extends Error {
   }
 }
 
+const BASE_URL = 'https://life-note-be-production.up.railway.app'
+
 async function postJson<T>(path: string, body: unknown): Promise<T> {
-  const response = await fetch(path, {
+  const response = await fetch(`${BASE_URL}${path}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     credentials: 'include',
@@ -48,7 +50,7 @@ async function postJson<T>(path: string, body: unknown): Promise<T> {
 }
 
 async function getCsrfToken(): Promise<string> {
-  const response = await fetch('/api/auth/csrf', { credentials: 'include' })
+  const response = await fetch(`${BASE_URL}/api/auth/csrf`, { credentials: 'include' })
   const data = await response.json()
   return data.csrfToken as string
 }
@@ -56,7 +58,7 @@ async function getCsrfToken(): Promise<string> {
 export async function login(input: LoginInput): Promise<AuthUser> {
   const csrfToken = await getCsrfToken()
 
-  const response = await fetch('/api/auth/callback/credentials', {
+  const response = await fetch(`${BASE_URL}/api/auth/callback/credentials`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/x-www-form-urlencoded',
@@ -93,7 +95,7 @@ export async function login(input: LoginInput): Promise<AuthUser> {
 
 export async function logout(): Promise<void> {
   const csrfToken = await getCsrfToken()
-  await fetch('/api/auth/signout', {
+  await fetch(`${BASE_URL}/api/auth/signout`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     credentials: 'include',
@@ -102,7 +104,7 @@ export async function logout(): Promise<void> {
 }
 
 export async function getSession(): Promise<AuthUser | null> {
-  const response = await fetch('/api/auth/session', { credentials: 'include' })
+  const response = await fetch(`${BASE_URL}/api/auth/session`, { credentials: 'include' })
   if (!response.ok) return null
   const data = await response.json().catch(() => null)
   return data?.user ?? null

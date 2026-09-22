@@ -3,23 +3,33 @@ import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { AuthLayout } from '../../components/auth/AuthLayout'
 import { FormField } from '../../components/auth/FormField'
 import { PasswordField } from '../../components/auth/PasswordField'
-import { useLogin } from '../../hooks/useAuth'
+import { useGoogleAuth, useLogin } from '../../hooks/useAuth'
 import { LoginSchema } from '../../schemas/auth'
 
 type FieldErrors = Partial<Record<'email' | 'password', string>>
 
 export function LoginPage() {
-  const navigate = useNavigate()
   const location = useLocation()
+  const navigate = useNavigate()
   const state = location.state as { registered?: boolean; verified?: boolean; resetComplete?: boolean } | null
   const registered = Boolean(state?.registered)
   const verified = Boolean(state?.verified)
   const resetComplete = Boolean(state?.resetComplete)
 
   const login = useLogin()
+  const googleAuth = useGoogleAuth()
   const [values, setValues] = useState({ email: '', password: '' })
   const [remember, setRemember] = useState(false)
   const [errors, setErrors] = useState<FieldErrors>({})
+  const [googleError, setGoogleError] = useState(false)
+
+  function handleGoogleSuccess(idToken: string) {
+    setGoogleError(false)
+    googleAuth.mutate(idToken, {
+      onSuccess: () => navigate('/dashboard', { replace: true }),
+      onError: () => setGoogleError(true),
+    })
+  }
 
   function updateField(field: 'email' | 'password', value: string) {
     setValues((prev) => ({ ...prev, [field]: value }))
@@ -41,12 +51,13 @@ export function LoginPage() {
     }
 
     login.mutate(result.data, {
-      onSuccess: () => navigate('/'),
-      onError: (error) => {
-        if (error.code === 'email_not_verified') {
-          navigate(`/verify-email?email=${encodeURIComponent(result.data.email)}`)
-        }
-      },
+      onSuccess: () => navigate('/dashboard', { replace: true }),
+      // OTP email verification temporarily disabled:
+      // onError: (error) => {
+      //   if (error.code === 'email_not_verified') {
+      //     navigate(`/verify-email?email=${encodeURIComponent(result.data.email)}`)
+      //   }
+      // },
     })
   }
 
@@ -60,6 +71,10 @@ export function LoginPage() {
       }
       showSocial
       socialLabel="Or sign in with"
+      onGoogleSuccess={handleGoogleSuccess}
+      onGoogleError={() => setGoogleError(true)}
+      googlePending={googleAuth.isPending}
+      googleErrorMessage={googleError ? 'Google sign-in failed. Please try again.' : undefined}
     >
       <form className="auth-form" onSubmit={handleSubmit} noValidate>
         {registered && (
@@ -122,6 +137,10 @@ export function LoginPage() {
         <button type="submit" className="auth-submit" disabled={login.isPending}>
           {login.isPending ? <span className="auth-spinner" aria-label="Signing in" /> : 'Sign in'}
         </button>
+
+        <p className="auth-switch-cta">
+          New to Life Note? <Link to="/register">Create an account</Link>
+        </p>
       </form>
     </AuthLayout>
   )

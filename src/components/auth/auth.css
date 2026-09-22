@@ -324,6 +324,20 @@
   background: var(--auth-surface-hover);
 }
 
+.auth-social-error {
+  margin-bottom: 0.65rem;
+}
+
+.auth-social-google {
+  display: flex;
+  justify-content: center;
+}
+
+.auth-social-google[aria-busy='true'] {
+  opacity: 0.6;
+  pointer-events: none;
+}
+
 .auth-card-footer {
   margin-top: 1.75rem;
   text-align: center;
@@ -402,4 +416,18 @@
   .auth-page {
     padding: 2rem 1.25rem;
   }
+}
+
+.auth-switch-cta {
+  margin: 0.25rem 0 0;
+  text-align: center;
+  font-size: 0.925rem;
+  color: var(--auth-text-secondary);
+}
+
+.auth-switch-cta a {
+  color: var(--auth-text);
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 2px;
 }

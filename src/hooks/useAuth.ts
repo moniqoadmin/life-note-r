@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   AuthApiError,
   getSession,
+  googleLogin,
   login,
   logout,
   register,
@@ -25,6 +26,16 @@ export function useLogin() {
   const queryClient = useQueryClient()
   return useMutation<Awaited<ReturnType<typeof login>>, AuthApiError, Parameters<typeof login>[0]>({
     mutationFn: login,
+    onSuccess: (user) => {
+      queryClient.setQueryData(sessionKey, user)
+    },
+  })
+}
+
+export function useGoogleAuth() {
+  const queryClient = useQueryClient()
+  return useMutation<Awaited<ReturnType<typeof googleLogin>>, AuthApiError, string>({
+    mutationFn: googleLogin,
     onSuccess: (user) => {
       queryClient.setQueryData(sessionKey, user)
     },

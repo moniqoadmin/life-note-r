@@ -30,7 +30,7 @@ export class AuthApiError extends Error {
   }
 }
 
-const BASE_URL = 'https://life-note-be-production.up.railway.app'
+const BASE_URL = import.meta.env.VITE_AUTH_API_URL ?? 'http://localhost:3000'
 
 async function postJson<T>(path: string, body: unknown): Promise<T> {
   const response = await fetch(`${BASE_URL}${path}`, {
@@ -84,6 +84,34 @@ export async function login(input: LoginInput): Promise<AuthUser> {
       throw new AuthApiError('Please verify your email before signing in.', 'email_not_verified')
     }
     throw new AuthApiError('Invalid email or password.', code ?? error ?? undefined)
+  }
+
+  const session = await getSession()
+  if (!session) {
+    throw new AuthApiError('Signed in, but no session was returned.')
+  }
+  return session
+}
+
+export async function googleLogin(idToken: string): Promise<AuthUser> {
+  const csrfToken = await getCsrfToken()
+
+  const response = await fetch(`${BASE_URL}/api/auth/callback/google`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded',
+      'X-Auth-Return-Redirect': '1',
+    },
+    credentials: 'include',
+    body: new URLSearchParams({ idToken, csrfToken, callbackUrl: '/', json: 'true' }),
+  })
+
+  const data = await response.json().catch(() => null)
+  const redirectUrl = data?.url as string | undefined
+  const error = redirectUrl ? new URL(redirectUrl, window.location.origin).searchParams.get('error') : null
+
+  if (!response.ok || error) {
+    throw new AuthApiError('Google sign-in failed. Please try again.', error ?? undefined)
   }
 
   const session = await getSession()

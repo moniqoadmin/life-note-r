@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { AuthLayout } from '../../components/auth/AuthLayout'
 import { FormField } from '../../components/auth/FormField'
 import { PasswordField } from '../../components/auth/PasswordField'
-import { useRegister } from '../../hooks/useAuth'
+import { useGoogleAuth, useRegister } from '../../hooks/useAuth'
 import { RegisterSchema } from '../../schemas/auth'
 
 type Field = 'name' | 'email' | 'password' | 'confirmPassword'
@@ -14,8 +14,18 @@ const initialValues = { name: '', email: '', password: '', confirmPassword: '' }
 export function RegisterPage() {
   const navigate = useNavigate()
   const register = useRegister()
+  const googleAuth = useGoogleAuth()
   const [values, setValues] = useState(initialValues)
   const [errors, setErrors] = useState<FieldErrors>({})
+  const [googleError, setGoogleError] = useState(false)
+
+  function handleGoogleSuccess(idToken: string) {
+    setGoogleError(false)
+    googleAuth.mutate(idToken, {
+      onSuccess: () => navigate('/dashboard', { replace: true }),
+      onError: () => setGoogleError(true),
+    })
+  }
 
   function updateField(field: Field, value: string) {
     setValues((prev) => ({ ...prev, [field]: value }))
@@ -37,10 +47,12 @@ export function RegisterPage() {
     }
 
     register.mutate(result.data, {
-      onSuccess: () =>
-        navigate(`/verify-email?email=${encodeURIComponent(result.data.email)}`, {
-          state: { registered: true },
-        }),
+      // OTP email verification temporarily disabled:
+      // onSuccess: () =>
+      //   navigate(`/verify-email?email=${encodeURIComponent(result.data.email)}`, {
+      //     state: { registered: true },
+      //   }),
+      onSuccess: () => navigate('/login', { state: { registered: true } }),
     })
   }
 
@@ -54,6 +66,10 @@ export function RegisterPage() {
       }
       showSocial
       socialLabel="Or sign up with"
+      onGoogleSuccess={handleGoogleSuccess}
+      onGoogleError={() => setGoogleError(true)}
+      googlePending={googleAuth.isPending}
+      googleErrorMessage={googleError ? 'Google sign-in failed. Please try again.' : undefined}
     >
       <form className="auth-form" onSubmit={handleSubmit} noValidate>
         <FormField

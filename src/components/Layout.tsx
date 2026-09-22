@@ -29,7 +29,10 @@ export function Layout() {
               </button>
             </>
           ) : (
-            <NavLink to="/login">Sign in</NavLink>
+            <>
+              <NavLink to="/login">Sign in</NavLink>
+              <NavLink to="/register">Sign up</NavLink>
+            </>
           )}
         </nav>
       </header>

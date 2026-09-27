@@ -1,0 +1,69 @@
+.ln-loader {
+  --ln-accent: var(--accent, #4c9aff);
+  --ln-line: var(--muted, #8c8f97);
+  --ln-text: var(--text, #d6d9de);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 24px;
+  color: var(--ln-text);
+}
+.ln-loader.ln-md { flex: 1; min-height: 200px; }
+.ln-loader.ln-sm { flex-direction: row; justify-content: flex-start; gap: 8px; padding: 6px 10px; }
+.ln-fullscreen { min-height: 100vh; background: #1f1f21; }
+
+/* All strokes use pathLength=100, so dash offsets are percentages of each path. */
+.ln-mark path { stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 100; }
+.ln-body { stroke: var(--ln-line); stroke-width: 3; animation: ln-body 2.4s ease-in-out infinite; }
+.ln-fold { stroke: var(--ln-line); stroke-width: 3; animation: ln-fold 2.4s ease-in-out infinite; }
+.ln-letter { stroke: var(--ln-accent); stroke-width: 5.5; animation: ln-letter 2.4s ease-in-out infinite; }
+.ln-mark { overflow: visible; animation: ln-breathe 2.4s ease-in-out infinite; }
+
+@keyframes ln-body {
+  0% { stroke-dashoffset: 100; opacity: 1; }
+  35%, 85% { stroke-dashoffset: 0; opacity: 1; }
+  100% { stroke-dashoffset: 0; opacity: 0; }
+}
+@keyframes ln-fold {
+  0%, 30% { stroke-dashoffset: 100; opacity: 1; }
+  45%, 85% { stroke-dashoffset: 0; opacity: 1; }
+  100% { stroke-dashoffset: 0; opacity: 0; }
+}
+@keyframes ln-letter {
+  0%, 45% { stroke-dashoffset: 100; opacity: 1; }
+  70%, 85% { stroke-dashoffset: 0; opacity: 1; }
+  100% { stroke-dashoffset: 0; opacity: 0; }
+}
+@keyframes ln-breathe {
+  0%, 70% { transform: scale(1); }
+  78% { transform: scale(1.06); }
+  86%, 100% { transform: scale(1); }
+}
+
+.ln-wordmark {
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: .01em;
+  background: linear-gradient(90deg, var(--ln-line) 0%, var(--ln-text) 45%, var(--ln-accent) 50%, var(--ln-text) 55%, var(--ln-line) 100%);
+  background-size: 250% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: ln-shimmer 2.4s linear infinite;
+}
+@keyframes ln-shimmer {
+  from { background-position: 100% 0; }
+  to { background-position: -150% 0; }
+}
+.ln-label { font-size: 13px; color: var(--ln-line); }
+.ln-sm .ln-label { font-size: 12.5px; }
+
+/* Reduced motion: show the finished mark with a gentle pulse instead of drawing. */
+@media (prefers-reduced-motion: reduce) {
+  .ln-mark path { animation: none; stroke-dashoffset: 0; }
+  .ln-mark { animation: ln-pulse 1.6s ease-in-out infinite; }
+  .ln-wordmark { animation: none; color: var(--ln-text); background: none; }
+  @keyframes ln-pulse { 50% { opacity: .5; } }
+}

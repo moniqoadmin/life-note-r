@@ -2,7 +2,7 @@ import { GoogleLogin, type CredentialResponse } from '@react-oauth/google'
 import type { ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import './auth.css'
-import { FacebookIcon, GoogleIcon, TwitterIcon } from './icons'
+import { GoogleIcon } from './icons'
 
 interface AuthLayoutProps {
   title: string
@@ -16,11 +16,6 @@ interface AuthLayoutProps {
   googlePending?: boolean
   googleErrorMessage?: string
 }
-
-const OTHER_SOCIAL_PROVIDERS = [
-  { name: 'Twitter', icon: <TwitterIcon /> },
-  { name: 'Facebook', icon: <FacebookIcon /> },
-]
 
 export function AuthLayout({
   title,
@@ -80,13 +75,6 @@ export function AuthLayout({
                   <span>Continue with Google</span>
                 </button>
               )}
-
-              {OTHER_SOCIAL_PROVIDERS.map((provider) => (
-                <button key={provider.name} type="button" className="auth-social-btn">
-                  {provider.icon}
-                  <span>Continue with {provider.name}</span>
-                </button>
-              ))}
             </div>
           </>
         )}

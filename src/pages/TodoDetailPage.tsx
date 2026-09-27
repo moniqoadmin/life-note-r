@@ -1,4 +1,5 @@
 import { Link, useParams } from 'react-router-dom'
+import { LifeNoteLoader } from '../components/LifeNoteLoader'
 import { useTodo } from '../hooks/useTodos'
 
 export function TodoDetailPage() {
@@ -11,7 +12,7 @@ export function TodoDetailPage() {
   }
 
   if (isPending) {
-    return <p>Loading todo…</p>
+    return <LifeNoteLoader label="Loading todo…" />
   }
 
   if (isError) {

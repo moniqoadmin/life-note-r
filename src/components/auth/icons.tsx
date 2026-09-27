@@ -50,29 +50,6 @@ export function GoogleIcon() {
   )
 }
 
-export function TwitterIcon() {
-  return (
-    <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true">
-      <path
-        fill="#1DA1F2"
-        d="M23.6 4.94a9.3 9.3 0 0 1-2.67.73 4.67 4.67 0 0 0 2.05-2.58 9.4 9.4 0 0 1-2.96 1.13 4.66 4.66 0 0 0-7.94 4.25A13.23 13.23 0 0 1 2.46 3.8a4.66 4.66 0 0 0 1.44 6.22 4.6 4.6 0 0 1-2.11-.58v.06a4.66 4.66 0 0 0 3.74 4.57 4.7 4.7 0 0 1-2.1.08 4.66 4.66 0 0 0 4.36 3.24A9.35 9.35 0 0 1 .96 19.5a13.19 13.19 0 0 0 7.14 2.09c8.57 0 13.26-7.1 13.26-13.26 0-.2 0-.4-.02-.6a9.47 9.47 0 0 0 2.33-2.41z"
-      />
-    </svg>
-  )
-}
-
-export function FacebookIcon() {
-  return (
-    <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true">
-      <circle cx="12" cy="12" r="12" fill="#1877F2" />
-      <path
-        fill="#fff"
-        d="M15.6 12.6h-2.1V20h-3v-7.4h-1.5v-2.6h1.5V8.4c0-1.6.8-3.1 3.3-3.1h2.2v2.4h-1.6c-.3 0-.7.2-.7.9v1.6h2.4l-.3 2.6z"
-      />
-    </svg>
-  )
-}
-
 export function MailCheckIcon() {
   return (
     <svg width="28" height="28" viewBox="0 0 24 24" fill="none" aria-hidden="true">

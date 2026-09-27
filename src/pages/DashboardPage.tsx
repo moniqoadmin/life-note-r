@@ -1,66 +1,65 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { Navigate, useNavigate } from 'react-router-dom'
-import {
-  createNote,
-  deleteNote,
-  getNote,
-  listNotes,
-  moveNote,
-  searchNotes,
-  updateNote,
-  type Note,
-  type NoteSummary,
-  type SearchHit,
-} from '../api/notes'
+import { createNote, deleteNote, listNotes, type NoteSummary, type SearchHit } from '../api/notes'
+import { ChevronIcon } from '../components/ChevronIcon'
+import { CommandBar, type Command } from '../components/CommandBar'
+import { IssueDetail } from '../components/issue/IssueDetail'
+import { LifeNoteLoader } from '../components/LifeNoteLoader'
 import { useLogout, useSession } from '../hooks/useAuth'
 import './dashboard.css'
 
-type SortKey = 'updatedAt' | 'createdAt' | 'title'
-
-// ts_headline wraps matches in <b> tags; show them as plain text.
-const stripTags = (s: string) => s.replace(/<[^>]*>/g, '')
-
-const formatDate = (iso: string) =>
-  new Date(iso).toLocaleString(undefined, {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-    hour: 'numeric',
-    minute: '2-digit',
-  })
-
-function sortNotes(notes: NoteSummary[], key: SortKey) {
-  return [...notes].sort((a, b) =>
-    key === 'title' ? a.title.localeCompare(b.title) : b[key].localeCompare(a[key]),
-  )
-}
-
 // The backend only has notes; the tree depth decides what a note is called in the UI.
 const kindOf = (depth: number) => (depth === 0 ? 'Module' : depth === 1 ? 'Sub-module' : 'Ticket')
-const iconOf = (depth: number) => (depth === 0 ? '▤' : depth === 1 ? '▦' : '✓')
+
+// Placeholders for views that don't exist yet; shown disabled so the nav reads like the target design.
+const PLANNING_LINKS = [
+  { icon: '▦', label: 'Kanban Board' },
+  { icon: '☰', label: 'Backlog & Sprints' },
+  { icon: '↗', label: 'Roadmap / Timeline' },
+]
+
+function sortByTitle(notes: NoteSummary[]) {
+  return [...notes].sort((a, b) => a.title.localeCompare(b.title))
+}
+
+interface Crumb {
+  id: string
+  title: string
+}
 
 interface Selection {
   id: string
   depth: number
+  path: Crumb[]
 }
 
 function initial(user: { name: string | null; email: string }) {
   return (user.name ?? user.email).charAt(0).toUpperCase()
 }
 
-interface RowActions {
+interface TreeActions {
   selectedId: string | null
   refreshKey: number
-  sort: SortKey
   onSelect: (selection: Selection) => void
-  onCreate: (parentId: string, depth: number) => Promise<void>
+  onCreate: (parentId: string, depth: number, path: Crumb[]) => Promise<void>
   onDelete: (note: NoteSummary) => void
 }
 
-function NoteRow({ note, depth, actions }: { note: NoteSummary; depth: number; actions: RowActions }) {
-  const { selectedId, refreshKey, sort, onSelect, onCreate, onDelete } = actions
+function TreeRow({
+  note,
+  depth,
+  ancestors,
+  actions,
+}: {
+  note: NoteSummary
+  depth: number
+  ancestors: Crumb[]
+  actions: TreeActions
+}) {
+  const { selectedId, refreshKey, onSelect, onCreate, onDelete } = actions
   const [open, setOpen] = useState(false)
   const [children, setChildren] = useState<NoteSummary[] | null>(null)
+  const path = [...ancestors, { id: note.id, title: note.title || 'Untitled' }]
 
   useEffect(() => {
     if (!open) return
@@ -77,185 +76,62 @@ function NoteRow({ note, depth, actions }: { note: NoteSummary; depth: number; a
 
   return (
     <>
-      <div className={`row${selectedId === note.id ? ' selected' : ''}`} onClick={() => onSelect({ id: note.id, depth })}>
-        <div className="cell cell-work" style={{ paddingLeft: 12 + depth * 22 }}>
+      <div
+        className={`tree-row${selectedId === note.id ? ' selected' : ''}`}
+        style={{ paddingLeft: 10 + depth * 14 }}
+        onClick={() => onSelect({ id: note.id, depth, path })}
+      >
+        {depth === 0 ? (
+          <span className={`tree-dot${open || selectedId === note.id ? ' active' : ''}`} aria-hidden="true" />
+        ) : (
+          <span className="tree-hash" aria-hidden="true">
+            #
+          </span>
+        )}
+        <span className="tree-title">{note.title || 'Untitled'}</span>
+        <span className="tree-actions">
           <button
             type="button"
-            className="chevron"
-            aria-label={open ? 'Collapse' : 'Expand'}
-            style={{ visibility: hasChildren ? 'visible' : 'hidden' }}
-            onClick={(e) => {
+            title={`Add ${kindOf(depth + 1).toLowerCase()}`}
+            onClick={async (e) => {
               e.stopPropagation()
-              setOpen((o) => !o)
+              setOpen(true)
+              await onCreate(note.id, depth + 1, path)
             }}
           >
-            {open ? '⌄' : '›'}
+            +
           </button>
-          <span className={`note-icon kind-${Math.min(depth, 2)}`} aria-hidden="true">
-            {iconOf(depth)}
-          </span>
-          <span className="note-title">{note.title || 'Untitled'}</span>
-          <span className="row-actions">
-            <button
-              type="button"
-              title={`Add ${kindOf(depth + 1).toLowerCase()}`}
-              onClick={async (e) => {
-                e.stopPropagation()
-                setOpen(true)
-                await onCreate(note.id, depth + 1)
-              }}
-            >
-              +
-            </button>
-            <button
-              type="button"
-              title="Delete"
-              className="danger"
-              onClick={(e) => {
-                e.stopPropagation()
-                onDelete(note)
-              }}
-            >
-              ×
-            </button>
-          </span>
-        </div>
-        <div className="cell">{kindOf(depth)}</div>
-        <div className="cell cell-num">
-          {note.childCount ? <span className="pill">{note.childCount}</span> : <span className="muted">None</span>}
-        </div>
-        <div className="cell">{formatDate(note.createdAt)}</div>
-        <div className="cell">{formatDate(note.updatedAt)}</div>
+          <button
+            type="button"
+            title="Delete"
+            className="danger"
+            onClick={(e) => {
+              e.stopPropagation()
+              onDelete(note)
+            }}
+          >
+            ×
+          </button>
+        </span>
+        <button
+          type="button"
+          className="chevron"
+          aria-label={open ? 'Collapse' : 'Expand'}
+          style={{ visibility: hasChildren ? 'visible' : 'hidden' }}
+          onClick={(e) => {
+            e.stopPropagation()
+            setOpen((o) => !o)
+          }}
+        >
+          <ChevronIcon open={open} />
+        </button>
       </div>
       {open &&
         children &&
-        sortNotes(children, sort).map((c) => <NoteRow key={c.id} note={c} depth={depth + 1} actions={actions} />)}
+        sortByTitle(children).map((c) => (
+          <TreeRow key={c.id} note={c} depth={depth + 1} ancestors={path} actions={actions} />
+        ))}
     </>
-  )
-}
-
-function Editor({
-  noteId,
-  depth,
-  onSaved,
-  onClose,
-  onOpen,
-}: {
-  noteId: string
-  depth: number
-  onSaved: () => void
-  onClose: () => void
-  onOpen: (selection: Selection) => void
-}) {
-  const [note, setNote] = useState<Note | null>(null)
-  const [title, setTitle] = useState('')
-  const [content, setContent] = useState('')
-  const [state, setState] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle')
-  const [error, setError] = useState<string | null>(null)
-  const dirty = useRef(false)
-
-  useEffect(() => {
-    let cancelled = false
-    getNote(noteId)
-      .then((n) => {
-        if (cancelled) return
-        setNote(n)
-        setTitle(n.title)
-        setContent(n.content)
-      })
-      .catch((e: Error) => !cancelled && setError(e.message))
-    return () => {
-      cancelled = true
-    }
-  }, [noteId])
-
-  // Debounced autosave.
-  useEffect(() => {
-    if (!dirty.current || !title.trim()) return
-    const t = setTimeout(async () => {
-      setState('saving')
-      try {
-        await updateNote(noteId, { title: title.trim(), content })
-        setState('saved')
-        onSaved()
-      } catch (e) {
-        setState('error')
-        setError((e as Error).message)
-      }
-    }, 800)
-    return () => clearTimeout(t)
-  }, [title, content, noteId, onSaved])
-
-  return (
-    <aside className="panel">
-      <div className="panel-head">
-        <span className="panel-kind">{kindOf(depth)}</span>
-        <span className="panel-status">
-          {state === 'saving' && 'Saving…'}
-          {state === 'saved' && 'All changes saved'}
-          {state === 'error' && <span className="error">{error}</span>}
-          {state === 'idle' && note && `Last edited ${formatDate(note.updatedAt)}`}
-        </span>
-        <button type="button" className="icon-btn" aria-label="Close" onClick={onClose}>
-          ×
-        </button>
-      </div>
-      {error && !note ? (
-        <p className="panel-msg error">{error}</p>
-      ) : !note ? (
-        <p className="panel-msg">Loading…</p>
-      ) : (
-        <div className="panel-body">
-          <input
-            className="editor-title"
-            value={title}
-            onChange={(e) => {
-              dirty.current = true
-              setTitle(e.target.value)
-            }}
-            placeholder="Untitled"
-            maxLength={200}
-          />
-          <textarea
-            className="editor-body"
-            value={content}
-            onChange={(e) => {
-              dirty.current = true
-              setContent(e.target.value)
-            }}
-            placeholder="Start writing…"
-          />
-          {note.parentId && (
-            <button
-              type="button"
-              className="link-btn"
-              onClick={async () => {
-                try {
-                  await moveNote(noteId, null)
-                  onSaved()
-                  onClose()
-                } catch (e) {
-                  setError((e as Error).message)
-                }
-              }}
-            >
-              Move to top level
-            </button>
-          )}
-          {note.children && note.children.length > 0 && (
-            <div className="children">
-              <h3>{kindOf(depth + 1)}s</h3>
-              {note.children.map((c) => (
-                <button key={c.id} type="button" onClick={() => onOpen({ id: c.id, depth: depth + 1 })}>
-                  <span className={`note-icon kind-${Math.min(depth + 1, 2)}`}>{iconOf(depth + 1)}</span>{' '}
-                  {c.title || 'Untitled'}
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
-    </aside>
   )
 }
 
@@ -268,9 +144,6 @@ export function DashboardPage() {
   const [selected, setSelected] = useState<Selection | null>(null)
   const selectedId = selected?.id ?? null
   const [refreshKey, setRefreshKey] = useState(0)
-  const [query, setQuery] = useState('')
-  const [hits, setHits] = useState<SearchHit[] | null>(null)
-  const [sort, setSort] = useState<SortKey>('updatedAt')
   const [menuOpen, setMenuOpen] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -287,32 +160,29 @@ export function DashboardPage() {
     }
   }, [refreshKey, signedIn])
 
-  useEffect(() => {
-    const q = query.trim()
-    if (!q) return
-    let cancelled = false
-    const t = setTimeout(() => {
-      searchNotes(q)
-        .then((r) => !cancelled && setHits(r))
-        .catch(() => !cancelled && setHits([]))
-    }, 300)
-    return () => {
-      cancelled = true
-      clearTimeout(t)
-    }
-  }, [query])
-
   const refresh = useCallback(() => setRefreshKey((k) => k + 1), [])
 
-  if (isPending) return <p className="dash-loading">Loading…</p>
+  if (isPending) return <LifeNoteLoader size="lg" fullscreen />
   if (!user) return <Navigate to="/login" replace />
 
-  const shownHits = query.trim() ? hits : null
-
-  async function handleCreate(parentId: string | null, depth = 0) {
+  async function handleCreate(parentId: string | null, depth = 0, path: Crumb[] = []) {
     try {
       const note = await createNote(parentId, kindOf(depth))
-      setSelected({ id: note.id, depth })
+      setSelected({ id: note.id, depth, path: [...path, { id: note.id, title: note.title }] })
+      refresh()
+    } catch (e) {
+      setError((e as Error).message)
+    }
+  }
+
+  // Creates directly under whatever is currently open, or at the top level otherwise.
+  async function handleCreateFromSearch(title: string) {
+    try {
+      const parentId = selected?.id ?? null
+      const depth = selected ? selected.depth + 1 : 0
+      const path = selected?.path ?? []
+      const note = await createNote(parentId, title)
+      setSelected({ id: note.id, depth, path: [...path, { id: note.id, title: note.title }] })
       refresh()
     } catch (e) {
       setError((e as Error).message)
@@ -331,10 +201,56 @@ export function DashboardPage() {
     }
   }
 
-  const actions: RowActions = {
+  function selectHit(h: SearchHit) {
+    setSelected({
+      id: h.id,
+      depth: h.breadcrumb.length,
+      path: [...h.breadcrumb, { id: h.id, title: h.title || 'Untitled' }],
+    })
+  }
+
+  async function createTopLevel(title: string) {
+    try {
+      const note = await createNote(null, title)
+      setSelected({ id: note.id, depth: 0, path: [{ id: note.id, title: note.title }] })
+      refresh()
+    } catch (e) {
+      setError((e as Error).message)
+    }
+  }
+
+  function signOut() {
+    logout.mutate(undefined, { onSuccess: () => navigate('/login') })
+  }
+
+  const openTitle = selected?.path.at(-1)?.title
+  const commands = (q: string): Command[] =>
+    q
+      ? [
+          ...(selected
+            ? [{ id: 'create-in', icon: '+', label: `Create “${q}” in ${openTitle}`, hint: 'Enter', run: handleCreateFromSearch }]
+            : []),
+          { id: 'create-module', icon: '▤', label: `Create module “${q}”`, run: createTopLevel },
+        ]
+      : [
+          { id: 'new-module', icon: '▤', label: 'New module', run: () => handleCreate(null) },
+          ...(selected
+            ? [
+                {
+                  id: 'new-child',
+                  icon: '+',
+                  label: `New ${kindOf(selected.depth + 1).toLowerCase()} in ${openTitle}`,
+                  run: () => handleCreate(selected.id, selected.depth + 1, selected.path),
+                },
+                { id: 'close', icon: '×', label: `Close ${openTitle}`, run: () => setSelected(null) },
+              ]
+            : []),
+          { id: 'sign-out', icon: '⎋', label: 'Sign out', run: signOut },
+        ]
+
+  const actions: TreeActions = {
     selectedId,
     refreshKey,
-    sort,
     onSelect: setSelected,
     onCreate: handleCreate,
     onDelete: handleDelete,
@@ -342,31 +258,71 @@ export function DashboardPage() {
 
   return (
     <div className="jira">
-      <header className="topbar">
-        <div className="topbar-brand">
-          <span className="logo">L</span>
-          <span>Life Note</span>
+      <aside className="sidebar">
+        <div className="sidebar-header">
+          <span className="logo sm">L</span>
+          <div className="sidebar-brand-wrap">
+            <span className="sidebar-brand">Life Note</span>
+            <span className="sidebar-workspace">
+              <span className="ws-dot" /> {user.name ? `${user.name}'s workspace` : 'Personal workspace'}
+            </span>
+          </div>
         </div>
-        <button type="button" className="btn-create" onClick={() => handleCreate(null)}>
-          + Create
-        </button>
-        <div className="topbar-spacer" />
-        <div className="avatar-wrap">
-          <button
-            type="button"
-            className="avatar"
-            aria-label="Account menu"
-            onClick={() => setMenuOpen((o) => !o)}
-          >
+
+        <div className="sidebar-scroll">
+          <div className="sidebar-section">
+            <div className="section-heading">Planning</div>
+            {PLANNING_LINKS.map((l) => (
+              <button type="button" key={l.label} className="nav-item" disabled title="Coming soon">
+                <span className="nav-icon" aria-hidden="true">
+                  {l.icon}
+                </span>
+                {l.label}
+                <span className="soon">Soon</span>
+              </button>
+            ))}
+          </div>
+
+          <div className="sidebar-section">
+            <div className="section-heading">
+              Workspace Modules
+              <button type="button" className="section-add" title="New module" onClick={() => handleCreate(null)}>
+                +
+              </button>
+            </div>
+
+            {error && <p className="banner error">{error}</p>}
+
+            <nav className="sidebar-tree">
+              {roots === null ? (
+                <LifeNoteLoader size="sm" label="Loading modules…" />
+              ) : roots.length === 0 ? (
+                <p className="tree-empty">No modules yet.</p>
+              ) : (
+                sortByTitle(roots).map((n) => <TreeRow key={n.id} note={n} depth={0} ancestors={[]} actions={actions} />)
+              )}
+            </nav>
+          </div>
+        </div>
+
+        <div className="sidebar-footer">
+          <span className="avatar" aria-hidden="true">
             {initial(user)}
+          </span>
+          <div className="footer-user">
+            <span className="footer-name">{user.name ?? user.email}</span>
+            <span className="footer-email">{user.email}</span>
+          </div>
+          <button type="button" className="footer-icon" aria-label="Account settings" onClick={() => setMenuOpen((o) => !o)}>
+            ⚙
           </button>
           {menuOpen && (
-            <div className="menu">
+            <div className="menu menu-up">
               <div className="menu-user">{user.name ?? user.email}</div>
               <div className="menu-email">{user.email}</div>
               <button
                 type="button"
-                onClick={() => logout.mutate(undefined, { onSuccess: () => navigate('/login') })}
+                onClick={signOut}
                 disabled={logout.isPending}
               >
                 Sign out
@@ -374,103 +330,66 @@ export function DashboardPage() {
             </div>
           )}
         </div>
-      </header>
+      </aside>
 
-      <div className="workspace">
-        <section className="content">
-          <div className="crumb">Spaces</div>
-          <h1 className="space-title">
-            <span className="logo sm">N</span> My Workspace
-          </h1>
-          <nav className="tabs">
-            <span className="tab active">▤ List</span>
-          </nav>
-
-          <div className="toolbar">
-            <input
-              type="search"
-              className="search"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search work"
-            />
-            <label className="sort">
-              Sort
-              <select value={sort} onChange={(e) => setSort(e.target.value as SortKey)}>
-                <option value="updatedAt">Updated</option>
-                <option value="createdAt">Created</option>
-                <option value="title">Title</option>
-              </select>
-            </label>
-          </div>
-
-          {error && <p className="banner error">{error}</p>}
-
-          <div className="table">
-            <div className="row head">
-              <div className="cell cell-work">Work</div>
-              <div className="cell">Type</div>
-              <div className="cell cell-num">Items</div>
-              <div className="cell">Created</div>
-              <div className="cell">Updated</div>
-            </div>
-            <div className="table-body">
-              {shownHits ? (
-                shownHits.length === 0 ? (
-                  <p className="empty">No results.</p>
-                ) : (
-                  shownHits.map((h) => (
-                    <div
-                      key={h.id}
-                      className={`row${selectedId === h.id ? ' selected' : ''}`}
-                      onClick={() => setSelected({ id: h.id, depth: h.breadcrumb.length })}
-                    >
-                      <div className="cell cell-work hit">
-                        <span className={`note-icon kind-${Math.min(h.breadcrumb.length, 2)}`} aria-hidden="true">
-                          {iconOf(h.breadcrumb.length)}
-                        </span>
-                        <span className="note-title">{h.title || 'Untitled'}</span>
-                        <span className="muted hit-snippet">
-                          {h.breadcrumb.length > 0 && `${h.breadcrumb.map((b) => b.title).join(' › ')} — `}
-                          {stripTags(h.snippet)}
-                        </span>
-                      </div>
-                    </div>
-                  ))
-                )
-              ) : roots === null ? (
-                <p className="empty">Loading…</p>
-              ) : roots.length === 0 ? (
-                <p className="empty">No notes yet. Create your first one.</p>
-              ) : (
-                sortNotes(roots, sort).map((n) => <NoteRow key={n.id} note={n} depth={0} actions={actions} />)
-              )}
-            </div>
-            <div className="table-foot">
-              <button type="button" className="foot-create" onClick={() => handleCreate(null)}>
-                + Create
-              </button>
-              <span className="count">
-                {shownHits ? `${shownHits.length} result${shownHits.length === 1 ? '' : 's'}` : `${roots?.length ?? 0} of ${roots?.length ?? 0}`}
-              </span>
-              <button type="button" className="icon-btn" title="Refresh" aria-label="Refresh" onClick={refresh}>
-                ↻
-              </button>
-            </div>
-          </div>
-        </section>
-
-        {selected && (
-          <Editor
+      <main className="main">
+        {selected ? (
+          <IssueDetail
             key={selected.id}
             noteId={selected.id}
             depth={selected.depth}
+            path={selected.path}
+            user={user}
             onSaved={refresh}
             onClose={() => setSelected(null)}
-            onOpen={setSelected}
+            onOpenAncestor={(i) => setSelected({ id: selected.path[i]!.id, depth: i, path: selected.path.slice(0, i + 1) })}
+            onOpenChild={(id, title) =>
+              setSelected({ id, depth: selected.depth + 1, path: [...selected.path, { id, title: title || 'Untitled' }] })
+            }
           />
+        ) : (
+          <div className="main-empty">
+            {roots?.length === 0 ? (
+              <>
+                <h1>Start your first module</h1>
+                <p className="empty-lead">
+                  Modules hold your work. Name one in the search bar below and press Enter, or start with a blank one.
+                </p>
+                <button type="button" className="empty-cta" onClick={() => handleCreate(null)}>
+                  + New module
+                </button>
+              </>
+            ) : (
+              <>
+                <h1>Welcome back{user.name ? `, ${user.name.split(' ')[0]}` : ''}</h1>
+                <p className="empty-lead">
+                  Pick a module or ticket from the sidebar, or use the search bar below to find anything.
+                </p>
+              </>
+            )}
+            <ul className="empty-tips">
+              <li>
+                <kbd>⌘K</kbd>
+                <span>Jump to search from anywhere</span>
+              </li>
+              <li>
+                <kbd>Enter</kbd>
+                <span>Type a name, then pick <em>Create</em> to add it</span>
+              </li>
+              <li>
+                <kbd>↑</kbd>
+                <kbd>↓</kbd>
+                <span>Move through results</span>
+              </li>
+              <li>
+                <kbd>Esc</kbd>
+                <span>Close search</span>
+              </li>
+            </ul>
+          </div>
         )}
-      </div>
+        <CommandBar commands={commands} onSelectHit={selectHit} />
+      </main>
     </div>
   )
 }

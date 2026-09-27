@@ -1,11 +1,12 @@
 import { Link } from 'react-router-dom'
+import { LifeNoteLoader } from '../components/LifeNoteLoader'
 import { useTodos } from '../hooks/useTodos'
 
 export function TodosPage() {
   const { data, isPending, isError, error } = useTodos()
 
   if (isPending) {
-    return <p>Loading todos…</p>
+    return <LifeNoteLoader label="Loading todos…" />
   }
 
   if (isError) {

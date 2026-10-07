@@ -29,7 +29,7 @@ export class AuthApiError extends Error {
     this.code = code
   }
 }
-const BASE_URL = import.meta.env.VITE_AUTH_API_URL ?? 'http://localhost:3000'
+import { BASE_URL } from './baseUrl'
 
 
 async function postJson<T>(path: string, body: unknown): Promise<T> {

@@ -71,16 +71,27 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 export const listNotes = (parentId?: string) =>
   request<{ notes: NoteSummary[] }>(`/api/notes${parentId ? `?parentId=${parentId}` : ''}`).then((d) => d.notes)
 
-export const getNote = (id: string) => request<{ note: Note }>(`/api/notes/${id}`).then((d) => d.note)
+// The backend may omit the issue fields (status/priority/labels); fill defaults so the UI never reads undefined.
+const withDefaults = (n: Partial<Note> & NoteSummary): Note => ({
+  ...n,
+  content: n.content ?? '',
+  status: n.status ?? 'TODO',
+  priority: n.priority ?? 'MEDIUM',
+  labels: n.labels ?? [],
+})
+
+export const getNote = (id: string) => request<{ note: Note }>(`/api/notes/${id}`).then((d) => withDefaults(d.note))
 
 export const createNote = (parentId: string | null, title = 'Untitled') =>
   request<{ note: Note }>('/api/notes', {
     method: 'POST',
     body: JSON.stringify({ title, content: '', parentId }),
-  }).then((d) => d.note)
+  }).then((d) => withDefaults(d.note))
 
 export const updateNote = (id: string, body: NotePatch) =>
-  request<{ note: Note }>(`/api/notes/${id}`, { method: 'PATCH', body: JSON.stringify(body) }).then((d) => d.note)
+  request<{ note: Note }>(`/api/notes/${id}`, { method: 'PATCH', body: JSON.stringify(body) }).then((d) =>
+    withDefaults(d.note),
+  )
 
 export const deleteNote = (id: string) => request<unknown>(`/api/notes/${id}`, { method: 'DELETE' })
 

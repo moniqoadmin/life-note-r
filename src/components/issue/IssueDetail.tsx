@@ -67,6 +67,7 @@ export function IssueDetail({
   path,
   user,
   onSaved,
+  onRenamed,
   onClose,
   onOpenChild,
   onOpenAncestor,
@@ -76,6 +77,8 @@ export function IssueDetail({
   path: Crumb[]
   user: { id: string; name: string | null; email: string }
   onSaved: () => void
+  /** Called after a title change is saved, so the caller's breadcrumb path stays current. */
+  onRenamed: (title: string) => void
   onClose: () => void
   onOpenChild: (id: string, title: string) => void
   onOpenAncestor: (index: number) => void
@@ -123,6 +126,7 @@ export function IssueDetail({
         const saved = await updateNote(noteId, { title: title.trim(), content })
         setNote((n) => (n ? { ...n, updatedAt: saved.updatedAt } : n))
         setSaveState('saved')
+        onRenamed(saved.title)
         onSaved()
       } catch (e) {
         setSaveState('error')
@@ -130,7 +134,7 @@ export function IssueDetail({
       }
     }, 800)
     return () => clearTimeout(t)
-  }, [title, content, noteId, onSaved])
+  }, [title, content, noteId, onSaved, onRenamed])
 
   /** Applies `change` on screen right away, then persists it; rolls back if the request fails. */
   async function mutate(change: (n: Note) => Note, request: () => Promise<unknown>) {

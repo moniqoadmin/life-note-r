@@ -43,7 +43,12 @@ async function postJson<T>(path: string, body: unknown): Promise<T> {
   const data = await response.json().catch(() => null)
 
   if (!response.ok) {
-    throw new AuthApiError(data?.error ?? 'Something went wrong. Please try again.')
+    // Errors arrive as { error: { code, message } } (older routes send { error: string }).
+    const error = data?.error
+    throw new AuthApiError(
+      error?.message ?? (typeof error === 'string' ? error : 'Something went wrong. Please try again.'),
+      error?.code,
+    )
   }
 
   return data as T

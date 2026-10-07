@@ -123,12 +123,20 @@ export async function googleLogin(idToken: string): Promise<AuthUser> {
 
 export async function logout(): Promise<void> {
   const csrfToken = await getCsrfToken()
-  await fetch(`${BASE_URL}/api/auth/signout`, {
+  // X-Auth-Return-Redirect makes Auth.js answer 200 + JSON instead of a 302 to the
+  // backend's own home page, which has no CORS headers and would make fetch throw.
+  const response = await fetch(`${BASE_URL}/api/auth/signout`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded',
+      'X-Auth-Return-Redirect': '1',
+    },
     credentials: 'include',
-    body: new URLSearchParams({ csrfToken }),
+    body: new URLSearchParams({ csrfToken, json: 'true' }),
   })
+  if (!response.ok) {
+    throw new AuthApiError('Sign out failed. Please try again.')
+  }
 }
 
 export async function getSession(): Promise<AuthUser | null> {

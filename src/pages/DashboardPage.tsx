@@ -220,7 +220,10 @@ export function DashboardPage() {
   }
 
   function signOut() {
-    logout.mutate(undefined, { onSuccess: () => navigate('/login') })
+    logout.mutate(undefined, {
+      onSuccess: () => navigate('/login'),
+      onError: (e) => setError(e.message),
+    })
   }
 
   const openTitle = selected?.path.at(-1)?.title

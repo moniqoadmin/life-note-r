@@ -27,6 +27,7 @@ export function Layout() {
               <button type="button" className="nav-signout" onClick={handleSignOut} disabled={logout.isPending}>
                 {logout.isPending ? 'Signing out…' : 'Sign out'}
               </button>
+              {logout.isError && <span className="error">{logout.error.message}</span>}
             </>
           ) : (
             <>

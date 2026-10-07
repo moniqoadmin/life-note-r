@@ -47,6 +47,8 @@ export function useLogout() {
   return useMutation({
     mutationFn: logout,
     onSuccess: () => {
+      // Drop everything cached for the previous user (todos etc.), then mark signed out.
+      queryClient.clear()
       queryClient.setQueryData(sessionKey, null)
     },
   })

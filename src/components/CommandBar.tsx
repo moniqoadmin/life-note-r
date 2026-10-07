@@ -39,6 +39,7 @@ export function CommandBar({
   const [query, setQuery] = useState('')
   const [open, setOpen] = useState(false)
   const [hits, setHits] = useState<SearchHit[] | null>(null)
+  const [searchError, setSearchError] = useState<string | null>(null)
   const [active, setActive] = useState(0)
   const [listening, setListening] = useState(false)
   const recRef = useRef<Recognition | null>(null)
@@ -60,13 +61,22 @@ export function CommandBar({
     const q = query.trim()
     if (!q) {
       setHits(null)
+      setSearchError(null)
       return
     }
     let cancelled = false
     const t = setTimeout(() => {
       searchNotes(q)
-        .then((r) => !cancelled && setHits(r))
-        .catch(() => !cancelled && setHits([]))
+        .then((r) => {
+          if (cancelled) return
+          setHits(r)
+          setSearchError(null)
+        })
+        .catch((e: Error) => {
+          if (cancelled) return
+          setHits([])
+          setSearchError(e.message)
+        })
     }, 250)
     return () => {
       cancelled = true
@@ -130,7 +140,9 @@ export function CommandBar({
           {q && (
             <div className="cmdbar-group">
               <div className="cmdbar-group-label">Issues</div>
-              {hits === null ? (
+              {searchError ? (
+                <div className="cmdbar-empty error">Search failed: {searchError}</div>
+              ) : hits === null ? (
                 <div className="cmdbar-empty">Searching…</div>
               ) : hitItems.length === 0 ? (
                 <div className="cmdbar-empty">No issues match “{q}”</div>

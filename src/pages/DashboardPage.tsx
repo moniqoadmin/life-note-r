@@ -162,6 +162,16 @@ export function DashboardPage() {
 
   const refresh = useCallback(() => setRefreshKey((k) => k + 1), [])
 
+  // Keeps the open item's crumb in sync with its saved title (the path is otherwise
+  // only rebuilt when something is selected).
+  const renameSelected = useCallback(
+    (title: string) =>
+      setSelected((s) =>
+        s ? { ...s, path: s.path.map((c) => (c.id === s.id ? { ...c, title: title || 'Untitled' } : c)) } : s,
+      ),
+    [],
+  )
+
   if (isPending) return <LifeNoteLoader size="lg" fullscreen />
   if (!user) return <Navigate to="/login" replace />
 
@@ -344,6 +354,7 @@ export function DashboardPage() {
             path={selected.path}
             user={user}
             onSaved={refresh}
+            onRenamed={renameSelected}
             onClose={() => setSelected(null)}
             onOpenAncestor={(i) => setSelected({ id: selected.path[i]!.id, depth: i, path: selected.path.slice(0, i + 1) })}
             onOpenChild={(id, title) =>

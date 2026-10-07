@@ -64,7 +64,8 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
     headers: { 'Content-Type': 'application/json', ...init?.headers },
   })
   const data = await res.json().catch(() => ({}))
-  if (!res.ok) throw new Error(data.error ?? 'Something went wrong')
+  // Errors arrive as { error: { code, message } } (older routes send { error: string }).
+  if (!res.ok) throw new Error(data.error?.message ?? (typeof data.error === 'string' ? data.error : 'Something went wrong'))
   return data as T
 }
 

@@ -190,3 +190,81 @@
 .sop-signoff .inline-input:disabled { cursor: not-allowed; }
 .sop-audit li { display: flex; gap: 12px; padding: 6px 10px; border-radius: 6px; background: var(--bg); font-size: 12.5px; }
 .sop-audit-at { font-family: ui-monospace, 'Cascadia Code', monospace; color: var(--muted); flex-shrink: 0; }
+
+/* --- SOP execution (live runbook) --- */
+.sop-version { margin-left: 4px; padding: 0 5px; border-radius: 3px; background: rgba(255,255,255,.08); color: var(--muted); font-size: 11px; font-weight: 600; }
+.sop-badges { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.sop-run-status { padding: 2px 8px; border-radius: 4px; font-size: 11.5px; font-weight: 600; background: rgba(76,154,255,.14); color: var(--st-progress); white-space: nowrap; }
+.sop-run-status.run-completed { background: rgba(75,206,151,.16); color: var(--st-done); }
+.sop-run-status.run-failed { background: rgba(248,113,104,.16); color: var(--danger); }
+.sop-run-status.run-blocked { background: rgba(245,165,36,.16); color: var(--st-review); }
+.sop-run-status.run-skipped, .sop-run-status.run-pending { background: rgba(140,143,151,.16); color: var(--muted); }
+.sop-assign { padding: 1px 6px; border-radius: 3px; background: rgba(159,143,239,.14); color: #b8acf6; font-size: 11px; font-weight: 600; white-space: nowrap; }
+.sop-tabs .sop-cancel { margin-left: auto; border: 0 !important; }
+.sop-tabs .sop-cancel:hover { color: var(--danger) !important; }
+.progress-fill.failed { background: var(--danger); }
+.sop-type { display: inline-block; padding: 0 6px; border-radius: 3px; background: rgba(255,255,255,.06); color: var(--muted); font-size: 10.5px; font-weight: 600; white-space: nowrap; }
+.sop-attempt { display: inline-block; padding: 0 6px; border-radius: 3px; background: rgba(245,165,36,.14); color: var(--st-review); font-size: 10.5px; font-weight: 600; }
+.sop-step { position: relative; }
+.sop-failed { border-color: rgba(248,113,104,.4); background: rgba(248,113,104,.05); }
+.sop-failed .sop-marker { color: var(--danger); font-weight: 700; }
+.sop-failed .sop-state { background: rgba(248,113,104,.16); color: var(--danger); }
+.sop-blocked { border-color: rgba(245,165,36,.4); }
+.sop-blocked .sop-state { background: rgba(245,165,36,.16); color: var(--st-review); }
+.sop-skipped { opacity: .55; }
+.sop-skipped .sop-step-title { text-decoration: line-through; color: var(--muted); }
+.sop-in_progress .sop-marker .sop-live { width: 9px; height: 9px; }
+.sop-result-chip { margin-left: 6px; padding: 0 5px; border-radius: 3px; background: rgba(255,255,255,.08); color: var(--text); font-size: 10.5px; font-weight: 700; }
+.sop-notes { margin: 0; padding: 6px 8px; border-left: 2px solid var(--border); color: var(--muted); font-size: 12px; white-space: pre-wrap; }
+.sop-controls { display: flex; flex-direction: column; gap: 8px; }
+.sop-checklist { display: flex; flex-direction: column; gap: 2px; }
+.sop-approvals { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; font-size: 12px; }
+.sop-approval-count { font-weight: 700; }
+.sop-approval { padding: 1px 7px; border-radius: 10px; background: var(--raised); }
+.sop-approval.ok { color: var(--st-done); }
+.sop-approval.no { color: var(--danger); }
+.sop-waiting { margin: 0; font-size: 12.5px; color: var(--muted); }
+.sop-waiting code { color: var(--text); }
+.sop-secondary { display: flex; gap: 4px; align-items: center; }
+.sop-secondary .text-btn { padding: 2px 8px; font-size: 12px; }
+.sop-secondary .text-btn:hover { color: var(--text) !important; }
+.sop-rewind { position: absolute; top: 8px; right: 6px; opacity: 0; }
+.sop-step:hover .sop-rewind { opacity: 1; }
+.sop-step.sop-verified .sop-step-head { padding-right: 26px; }
+.sop-empty { align-items: flex-start; }
+.sop-start { display: flex; gap: 8px; align-items: center; width: 100%; }
+.sop-start .sop-select { flex: 1; }
+.sop-another summary { cursor: pointer; margin-bottom: 8px; }
+.pill-btn.sm { padding: 4px 10px; font-size: 12px; }
+.danger-btn { padding: 6px 14px; border-radius: 6px; background: rgba(248,113,104,.16) !important; color: var(--danger) !important; font-weight: 600; }
+.danger-btn.sm { padding: 4px 12px; font-size: 12px; white-space: nowrap; }
+.danger-btn:disabled { opacity: .5; cursor: default; }
+
+/* --- SOP form controls (shared by the ticket view and the library) --- */
+.sop-select, .sop-input { min-width: 0; padding: 6px 8px; border-radius: 6px; border: 1px solid var(--border); background: var(--bg); color: var(--text); font: inherit; font-size: 12.5px; outline: 0; }
+.sop-select:focus, .sop-input:focus { border-color: var(--accent); }
+.sop-select.sm { padding: 3px 6px; font-size: 12px; }
+.sop-input.mono, .sop-json { font-family: ui-monospace, 'Cascadia Code', monospace; }
+.sop-input.num { width: 72px; }
+.sop-input.invalid { border-color: var(--danger); }
+textarea.sop-input { resize: vertical; }
+.sop-json { width: 100%; padding: 8px; border-radius: 6px; border: 1px solid var(--border); background: #111113; color: var(--text); font-size: 12px; resize: vertical; }
+.sop-field { display: flex; flex-direction: column; gap: 4px; font-size: 12px; }
+.sop-field > span:first-child { color: var(--muted); font-size: 11.5px; font-weight: 600; }
+.sop-field.grow { flex: 1; }
+.sop-check { display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; align-self: flex-end; padding-bottom: 6px; }
+.sop-checks { display: flex; flex-wrap: wrap; gap: 12px; font-size: 12.5px; }
+.sop-checks label { display: inline-flex; align-items: center; gap: 4px; }
+.sop-grid { display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-start; }
+.sop-assign-card .sop-field select { width: 100%; }
+.sop-assign-card h3 { display: flex; justify-content: space-between; align-items: center; }
+.cond { display: flex; flex-direction: column; gap: 6px; padding: 8px; border: 1px dashed var(--border); border-radius: 6px; }
+.cond-row { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+.cond-row.inline { display: inline-flex; }
+.cond-row .sop-input { flex: 1; min-width: 90px; }
+.cond-mode { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--muted); }
+.cond-bar { display: flex; align-items: center; gap: 8px; }
+.cond-bar .text-btn { padding: 2px 6px; font-size: 12px; }
+.cond-test { display: flex; flex-direction: column; gap: 4px; }
+.actions-ed { display: flex; flex-direction: column; gap: 6px; align-items: flex-start; }
+.actions-ed .cond-row { width: 100%; }

@@ -16,6 +16,7 @@ import {
 import { PRIORITIES, PRIORITY_LABEL, STATUSES, STATUS_LABEL, issueKey } from '../../lib/issue'
 import { ChevronIcon } from '../ChevronIcon'
 import { LifeNoteLoader } from '../LifeNoteLoader'
+import { SopAssignment } from './SopAssignment'
 import { SopRunbook } from './SopRunbook'
 import './issue.css'
 
@@ -329,7 +330,7 @@ export function IssueDetail({
               )}
             </div>
 
-            <SopRunbook userEmail={user.email} />
+            <SopRunbook noteId={noteId} userId={user.id} />
 
             <div className="section">
               <h4 className="section-label">Description</h4>
@@ -583,6 +584,8 @@ export function IssueDetail({
                 )}
               </dd>
             </dl>
+
+            <SopAssignment noteId={noteId} kind={kindOf(depth)} />
 
             <div className="side-card">
               <h3>⏱ Dates</h3>

@@ -272,6 +272,12 @@ export function DashboardPage() {
         <div className="sidebar-scroll">
           <div className="sidebar-section">
             <div className="section-heading">Planning</div>
+            <button type="button" className="nav-item" onClick={() => navigate('/sops')}>
+              <span className="nav-icon" aria-hidden="true">
+                📘
+              </span>
+              SOP Library
+            </button>
             {PLANNING_LINKS.map((l) => (
               <button type="button" key={l.label} className="nav-item" disabled title="Coming soon">
                 <span className="nav-icon" aria-hidden="true">

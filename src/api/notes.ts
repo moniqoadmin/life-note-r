@@ -31,6 +31,10 @@ export interface Comment {
 
 export interface Note extends NoteSummary {
   content: string
+  /** This note's own SOP (overrides an inherited one). */
+  sopOverrideId?: string | null
+  /** SOP that notes created inside this one inherit. */
+  defaultSopId?: string | null
   status: IssueStatus
   priority: IssuePriority
   labels: string[]
@@ -41,6 +45,8 @@ export interface Note extends NoteSummary {
 }
 
 export interface NotePatch {
+  sopOverrideId?: string | null
+  defaultSopId?: string | null
   title?: string
   content?: string
   status?: IssueStatus
@@ -55,18 +61,7 @@ export interface SearchHit {
   breadcrumb: { id: string; title: string }[]
 }
 
-import { BASE_URL } from './baseUrl'
-
-async function request<T>(path: string, init?: RequestInit): Promise<T> {
-  const res = await fetch(`${BASE_URL}${path}`, {
-    ...init,
-    credentials: 'include',
-    headers: { 'Content-Type': 'application/json', ...init?.headers },
-  })
-  const data = await res.json().catch(() => ({}))
-  if (!res.ok) throw new Error(data.error ?? 'Something went wrong')
-  return data as T
-}
+import { request } from './http'
 
 export const listNotes = (parentId?: string) =>
   request<{ notes: NoteSummary[] }>(`/api/notes${parentId ? `?parentId=${parentId}` : ''}`).then((d) => d.notes)

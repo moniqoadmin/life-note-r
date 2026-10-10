@@ -1,11 +1,13 @@
 import { useCallback, useEffect, useState } from 'react'
-import { Navigate, useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { createNote, deleteNote, listNotes, type NoteSummary, type SearchHit } from '../api/notes'
 import { ChevronIcon } from '../components/ChevronIcon'
 import { CommandBar, type Command } from '../components/CommandBar'
 import { IssueDetail } from '../components/issue/IssueDetail'
 import { LifeNoteLoader } from '../components/LifeNoteLoader'
+import { SopLibrary } from '../components/sop/SopLibrary'
 import { useLogout, useSession } from '../hooks/useAuth'
+import { useConfirm } from '../hooks/useConfirm'
 import './dashboard.css'
 
 // The backend only has notes; the tree depth decides what a note is called in the UI.
@@ -139,10 +141,17 @@ export function DashboardPage() {
   const navigate = useNavigate()
   const { data: user, isPending } = useSession()
   const logout = useLogout()
+  const confirm = useConfirm()
 
   const [roots, setRoots] = useState<NoteSummary[] | null>(null)
-  const [selected, setSelected] = useState<Selection | null>(null)
-  const selectedId = selected?.id ?? null
+  const [selected, setSelectedNote] = useState<Selection | null>(null)
+  const [showSops, setShowSops] = useState(false)
+  const selectedId = showSops ? null : (selected?.id ?? null)
+  // Opening a note always leaves the SOP library.
+  const setSelected = useCallback((next: Selection | null | ((s: Selection | null) => Selection | null)) => {
+    setShowSops(false)
+    setSelectedNote(next)
+  }, [])
   const [refreshKey, setRefreshKey] = useState(0)
   const [menuOpen, setMenuOpen] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -166,14 +175,14 @@ export function DashboardPage() {
   // only rebuilt when something is selected).
   const renameSelected = useCallback(
     (title: string) =>
-      setSelected((s) =>
+      setSelectedNote((s) =>
         s ? { ...s, path: s.path.map((c) => (c.id === s.id ? { ...c, title: title || 'Untitled' } : c)) } : s,
       ),
     [],
   )
 
-  if (isPending) return <LifeNoteLoader size="lg" fullscreen />
-  if (!user) return <Navigate to="/login" replace />
+  // RequireAuth only renders this page once the session has loaded with a user.
+  if (isPending || !user) return <LifeNoteLoader size="lg" fullscreen />
 
   async function handleCreate(parentId: string | null, depth = 0, path: Crumb[] = []) {
     try {
@@ -200,8 +209,15 @@ export function DashboardPage() {
   }
 
   async function handleDelete(note: NoteSummary) {
-    const extra = note.childCount ? ' and all of its sub-notes' : ''
-    if (!window.confirm(`Delete "${note.title || 'Untitled'}"${extra}?`)) return
+    const ok = await confirm({
+      title: `Delete “${note.title || 'Untitled'}”?`,
+      message: note.childCount
+        ? `This also deletes its ${note.childCount} sub-note${note.childCount === 1 ? '' : 's'} and everything inside them. This can't be undone.`
+        : "This can't be undone.",
+      confirmLabel: 'Delete',
+      tone: 'danger',
+    })
+    if (!ok) return
     try {
       await deleteNote(note.id)
       if (selectedId === note.id) setSelected(null)
@@ -247,6 +263,7 @@ export function DashboardPage() {
         ]
       : [
           { id: 'new-module', icon: '▤', label: 'New module', run: () => handleCreate(null) },
+          { id: 'sops', icon: '📘', label: 'Open SOP library', run: () => setShowSops(true) },
           ...(selected
             ? [
                 {
@@ -285,6 +302,16 @@ export function DashboardPage() {
         <div className="sidebar-scroll">
           <div className="sidebar-section">
             <div className="section-heading">Planning</div>
+            <button
+              type="button"
+              className={`nav-item${showSops ? ' active' : ''}`}
+              onClick={() => setShowSops(true)}
+            >
+              <span className="nav-icon" aria-hidden="true">
+                📘
+              </span>
+              SOP Library
+            </button>
             {PLANNING_LINKS.map((l) => (
               <button type="button" key={l.label} className="nav-item" disabled title="Coming soon">
                 <span className="nav-icon" aria-hidden="true">
@@ -346,7 +373,9 @@ export function DashboardPage() {
       </aside>
 
       <main className="main">
-        {selected ? (
+        {showSops ? (
+          <SopLibrary onClose={() => setShowSops(false)} />
+        ) : selected ? (
           <IssueDetail
             key={selected.id}
             noteId={selected.id}

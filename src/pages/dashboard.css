@@ -41,6 +41,8 @@
 .section-add:hover { background: rgba(255,255,255,.08); color: var(--text) !important; }
 .nav-item { width: 100%; display: flex; align-items: center; gap: 10px; padding: 6px 10px; border-radius: 6px; font-size: 13.5px; text-align: left; }
 .nav-item:disabled { cursor: default; color: var(--text); opacity: .8; }
+.nav-item:not(:disabled):hover { background: rgba(255,255,255,.05); }
+.nav-item.active { background: rgba(255,255,255,.09); font-weight: 600; }
 .nav-icon { width: 16px; text-align: center; color: var(--muted); }
 .soon { margin-left: auto; padding: 0 5px; border-radius: 3px; background: var(--raised); color: var(--muted); font-size: 10px; }
 

@@ -1,3 +1,4 @@
+import { useQueryClient } from '@tanstack/react-query'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import {
   addComment,
@@ -16,7 +17,10 @@ import {
 import { PRIORITIES, PRIORITY_LABEL, STATUSES, STATUS_LABEL, issueKey } from '../../lib/issue'
 import { ChevronIcon } from '../ChevronIcon'
 import { LifeNoteLoader } from '../LifeNoteLoader'
-import { SopRunbook } from './SopRunbook'
+import { useConfirm } from '../../hooks/useConfirm'
+import { sopKeys } from '../../hooks/useSops'
+import { CustomFieldsCard, EntitySopDefaults, SopOverrideSelect } from '../sop/NoteSopPanel'
+import { SopRunbook } from '../sop/SopRunbook'
 import './issue.css'
 
 const kindOf = (depth: number) => (depth === 0 ? 'Module' : depth === 1 ? 'Sub-module' : 'Ticket')
@@ -84,6 +88,8 @@ export function IssueDetail({
   onOpenAncestor: (index: number) => void
 }) {
   const userName = user.name ?? user.email
+  const queryClient = useQueryClient()
+  const confirm = useConfirm()
   const [note, setNote] = useState<Note | null>(null)
   const [title, setTitle] = useState('')
   const [content, setContent] = useState('')
@@ -158,6 +164,8 @@ export function IssueDetail({
       async () => {
         const saved = await updateNote(noteId, patch)
         setNote((n) => (n ? { ...n, updatedAt: saved.updatedAt } : n))
+        // Status / label / field changes can fire SOP rules; override changes swap the runbook.
+        queryClient.invalidateQueries({ queryKey: sopKeys.noteExecutions(noteId) })
       },
     )
   }
@@ -333,7 +341,7 @@ export function IssueDetail({
               )}
             </div>
 
-            <SopRunbook userEmail={user.email} />
+            <SopRunbook noteId={noteId} onSubjectChanged={load} />
 
             <div className="section">
               <h4 className="section-label">Description</h4>
@@ -379,8 +387,15 @@ export function IssueDetail({
                       type="button"
                       className="row-remove"
                       aria-label="Remove criterion"
-                      onClick={(e) => {
+                      onClick={async (e) => {
                         e.preventDefault()
+                        const ok = await confirm({
+                          title: 'Delete this criterion?',
+                          message: c.text,
+                          confirmLabel: 'Delete',
+                          tone: 'danger',
+                        })
+                        if (!ok) return
                         mutate(
                           (n) => ({ ...n, criteria: n.criteria?.filter((x) => x.id !== c.id) }),
                           () => deleteCriterion(noteId, c.id),
@@ -472,12 +487,19 @@ export function IssueDetail({
                             type="button"
                             className="row-remove"
                             aria-label="Delete comment"
-                            onClick={() =>
+                            onClick={async () => {
+                              const ok = await confirm({
+                                title: 'Delete your comment?',
+                                message: "This can't be undone.",
+                                confirmLabel: 'Delete',
+                                tone: 'danger',
+                              })
+                              if (!ok) return
                               mutate(
                                 (n) => ({ ...n, comments: n.comments?.filter((x) => x.id !== c.id) }),
                                 () => deleteComment(noteId, c.id),
                               )
-                            }
+                            }}
                           >
                             ×
                           </button>
@@ -548,6 +570,10 @@ export function IssueDetail({
                   </dd>
                 </>
               )}
+              <dt>SOP</dt>
+              <dd>
+                <SopOverrideSelect noteId={noteId} sopOverrideId={note.sopOverrideId} onPatch={patchIssue} />
+              </dd>
               <dt>Labels</dt>
               <dd className="labels">
                 {labels.map((l) => (
@@ -615,6 +641,9 @@ export function IssueDetail({
                 </span>
               </div>
             </div>
+
+            <CustomFieldsCard noteId={noteId} fields={note.customFields ?? {}} onPatch={patchIssue} />
+            {depth < 2 && <EntitySopDefaults noteId={noteId} kind={kindOf(depth)} />}
           </aside>
         </div>
       )}

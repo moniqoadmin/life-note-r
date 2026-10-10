@@ -1,7 +1,7 @@
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
+import { PublicOnly, RequireAuth } from './components/auth/RouteGuards'
 import { Layout } from './components/Layout'
 import { DashboardPage } from './pages/DashboardPage'
-import { HomePage } from './pages/HomePage'
 import { ForgotPasswordPage } from './pages/auth/ForgotPasswordPage'
 import { LoginPage } from './pages/auth/LoginPage'
 import { RegisterPage } from './pages/auth/RegisterPage'
@@ -14,18 +14,28 @@ export default function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="dashboard" element={<DashboardPage />} />
-        <Route path="login" element={<LoginPage />} />
-        <Route path="register" element={<RegisterPage />} />
+        {/* Signed-in users are sent on to the app (or back to where they were headed). */}
+        <Route element={<PublicOnly />}>
+          <Route path="login" element={<LoginPage />} />
+          <Route path="register" element={<RegisterPage />} />
+        </Route>
+
+        {/* Reachable either way: reset links arrive by email. */}
         <Route path="forgot-password" element={<ForgotPasswordPage />} />
         {/* <Route path="verify-email" element={<VerifyEmailPage />} /> */}
         <Route path="reset-password" element={<ResetPasswordPage />} />
-        <Route element={<Layout />}>
-          <Route index element={<HomePage />} />
-          <Route path="todos" element={<TodosPage />} />
-          <Route path="todos/:id" element={<TodoDetailPage />} />
-          <Route path="*" element={<Navigate to="/" replace />} />
+
+        {/* Everything else needs a session; signed-out visitors go to /login and come back after. */}
+        <Route element={<RequireAuth />}>
+          <Route path="dashboard" element={<DashboardPage />} />
+          <Route element={<Layout />}>
+            <Route path="todos" element={<TodosPage />} />
+            <Route path="todos/:id" element={<TodoDetailPage />} />
+          </Route>
         </Route>
+
+        <Route index element={<Navigate to="/dashboard" replace />} />
+        <Route path="*" element={<Navigate to="/dashboard" replace />} />
       </Routes>
     </BrowserRouter>
   )

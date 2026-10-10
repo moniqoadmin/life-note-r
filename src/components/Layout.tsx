@@ -17,9 +17,7 @@ export function Layout() {
       <header className="header">
         <h1 className="brand">Life Note</h1>
         <nav className="nav">
-          <NavLink to="/" end>
-            Home
-          </NavLink>
+          <NavLink to="/dashboard">Dashboard</NavLink>
           <NavLink to="/todos">Todos</NavLink>
           {isPending ? null : user ? (
             <>

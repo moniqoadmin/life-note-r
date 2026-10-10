@@ -1,0 +1,60 @@
+/* App-wide confirmation modal (rendered into <body>, so it carries its own colors). */
+.confirm-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  background: rgba(10, 10, 12, 0.62);
+  backdrop-filter: blur(2px);
+  animation: confirm-fade 0.12s ease-out;
+}
+.confirm-dialog {
+  width: min(420px, 100%);
+  padding: 20px 22px 18px;
+  border-radius: 12px;
+  border: 1px solid #3b3b3f;
+  background: #242426;
+  color: #d6d9de;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.5);
+  font: 14px/1.5 'Segoe UI', system-ui, sans-serif;
+  text-align: left;
+  animation: confirm-pop 0.14s ease-out;
+}
+.confirm-head { display: flex; align-items: center; gap: 12px; }
+.confirm-head h2 { margin: 0; font-size: 16px; font-weight: 600; color: #f1f2f4; }
+.confirm-icon {
+  display: inline-grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: rgba(248, 113, 104, 0.16);
+  color: #f87168;
+  font-weight: 700;
+}
+.confirm-message { margin: 10px 0 0; color: #8c8f97; font-size: 13.5px; overflow-wrap: anywhere; }
+.confirm-dialog.danger .confirm-message { padding-left: 40px; }
+.confirm-message strong { color: #d6d9de; font-weight: 600; }
+.confirm-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 20px; }
+.confirm-actions button {
+  padding: 7px 16px;
+  border-radius: 6px;
+  border: 1px solid #3b3b3f;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+.confirm-cancel { background: transparent; color: #d6d9de; }
+.confirm-cancel:hover { background: rgba(255, 255, 255, 0.06); }
+.confirm-ok { background: #4c9aff; border-color: #4c9aff !important; color: #0b1b33; }
+.confirm-dialog.danger .confirm-ok { background: #e5484d; border-color: #e5484d !important; color: #fff; }
+.confirm-ok:hover { filter: brightness(1.08); }
+.confirm-actions button:focus-visible { outline: 2px solid #4c9aff; outline-offset: 2px; }
+@keyframes confirm-fade { from { opacity: 0; } }
+@keyframes confirm-pop { from { opacity: 0; transform: translateY(6px) scale(0.98); } }
+@media (prefers-reduced-motion: reduce) {
+  .confirm-backdrop, .confirm-dialog { animation: none; }
+}

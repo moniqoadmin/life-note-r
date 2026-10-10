@@ -144,9 +144,16 @@ export async function logout(): Promise<void> {
   }
 }
 
+/**
+ * The signed-in user, or null when the server says there's no session. A failed check
+ * (network error, 5xx, backend restarting) throws instead, so the app can retry rather
+ * than mistake an outage for a logout and bounce the user to /login.
+ */
 export async function getSession(): Promise<AuthUser | null> {
   const response = await fetch(`${BASE_URL}/api/auth/session`, { credentials: 'include' })
-  if (!response.ok) return null
+  if (response.status === 401 || response.status === 403) return null
+  if (!response.ok) throw new AuthApiError(`Couldn't check your session (HTTP ${response.status}).`)
+  // Auth.js answers 200 with a `null` body when nobody is signed in.
   const data = await response.json().catch(() => null)
   return data?.user ?? null
 }

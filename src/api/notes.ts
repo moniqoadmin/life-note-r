@@ -1,3 +1,5 @@
+import { request } from './http'
+
 export type IssueStatus = 'TODO' | 'IN_PROGRESS' | 'IN_REVIEW' | 'DONE'
 export type IssuePriority = 'URGENT' | 'HIGH' | 'MEDIUM' | 'LOW'
 
@@ -34,11 +36,17 @@ export interface Note extends NoteSummary {
   status: IssueStatus
   priority: IssuePriority
   labels: string[]
+  /** Pins this note to one SOP instead of inheriting its module default. */
+  sopOverrideId?: string | null
+  /** Values SOP conditions read as fields.<key> (e.g. riskLevel). */
+  customFields?: Record<string, CustomFieldValue>
   /** getNote includes these three; create/update responses don't. */
   children?: NoteSummary[]
   criteria?: Criterion[]
   comments?: Comment[]
 }
+
+export type CustomFieldValue = string | number | boolean | null | (string | number)[]
 
 export interface NotePatch {
   title?: string
@@ -46,6 +54,8 @@ export interface NotePatch {
   status?: IssueStatus
   priority?: IssuePriority
   labels?: string[]
+  sopOverrideId?: string | null
+  customFields?: Record<string, CustomFieldValue>
 }
 
 export interface SearchHit {
@@ -53,20 +63,6 @@ export interface SearchHit {
   title: string
   snippet: string
   breadcrumb: { id: string; title: string }[]
-}
-
-import { BASE_URL } from './baseUrl'
-
-async function request<T>(path: string, init?: RequestInit): Promise<T> {
-  const res = await fetch(`${BASE_URL}${path}`, {
-    ...init,
-    credentials: 'include',
-    headers: { 'Content-Type': 'application/json', ...init?.headers },
-  })
-  const data = await res.json().catch(() => ({}))
-  // Errors arrive as { error: { code, message } } (older routes send { error: string }).
-  if (!res.ok) throw new Error(data.error?.message ?? (typeof data.error === 'string' ? data.error : 'Something went wrong'))
-  return data as T
 }
 
 export const listNotes = (parentId?: string) =>

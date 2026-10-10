@@ -4,6 +4,7 @@ import { AuthLayout } from '../../components/auth/AuthLayout'
 import { FormField } from '../../components/auth/FormField'
 import { PasswordField } from '../../components/auth/PasswordField'
 import { useGoogleAuth, useLogin } from '../../hooks/useAuth'
+import { postLoginPath } from '../../lib/authRedirect'
 import { LoginSchema } from '../../schemas/auth'
 
 type FieldErrors = Partial<Record<'email' | 'password', string>>
@@ -26,7 +27,7 @@ export function LoginPage() {
   function handleGoogleSuccess(idToken: string) {
     setGoogleError(false)
     googleAuth.mutate(idToken, {
-      onSuccess: () => navigate('/dashboard', { replace: true }),
+      onSuccess: () => navigate(postLoginPath(location.state), { replace: true }),
       onError: () => setGoogleError(true),
     })
   }
@@ -51,7 +52,7 @@ export function LoginPage() {
     }
 
     login.mutate(result.data, {
-      onSuccess: () => navigate('/dashboard', { replace: true }),
+      onSuccess: () => navigate(postLoginPath(location.state), { replace: true }),
       // OTP email verification temporarily disabled:
       // onError: (error) => {
       //   if (error.code === 'email_not_verified') {

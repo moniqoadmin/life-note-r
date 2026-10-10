@@ -4,6 +4,7 @@ import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import App from './App.tsx'
+import { ConfirmProvider } from './components/ConfirmDialog'
 import './index.css'
 import { queryClient } from './lib/query-client'
 
@@ -13,7 +14,9 @@ createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <GoogleOAuthProvider clientId={googleClientId ?? ''}>
       <QueryClientProvider client={queryClient}>
-        <App />
+        <ConfirmProvider>
+          <App />
+        </ConfirmProvider>
         <ReactQueryDevtools initialIsOpen={false} />
       </QueryClientProvider>
     </GoogleOAuthProvider>
